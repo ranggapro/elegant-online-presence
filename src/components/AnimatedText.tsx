@@ -12,9 +12,10 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({
   text, 
   className = '', 
   delay = 0, 
-  tag: Tag = 'h1' 
+  tag = 'h1' 
 }) => {
-  const textRef = useRef<HTMLElement>(null);
+  const textRef = useRef<HTMLElement | null>(null);
+  const Tag = tag as React.ElementType;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -22,8 +23,10 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setTimeout(() => {
-              entry.target.classList.add('animate-text-reveal');
-              observer.unobserve(entry.target);
+              if (entry.target instanceof HTMLElement) {
+                entry.target.classList.add('animate-text-reveal');
+                observer.unobserve(entry.target);
+              }
             }, delay);
           }
         });
@@ -44,7 +47,7 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({
 
   return (
     <Tag 
-      ref={textRef} 
+      ref={textRef as any} 
       className={`opacity-0 overflow-hidden ${className}`}
     >
       {text}
