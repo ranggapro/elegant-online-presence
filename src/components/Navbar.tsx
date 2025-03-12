@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,11 +25,17 @@ const Navbar = () => {
   }, [location]);
 
   const navLinks = [
-    { name: 'Home', path: '/' },
+    { name: 'Dashboard', path: '/dashboard' },
     { name: 'About', path: '/about' },
-    { name: 'Projects', path: '/projects' },
+    { name: 'Courses', path: '/projects' },
     { name: 'Contact', path: '/contact' },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    toast.success('Logged out successfully');
+    navigate('/auth');
+  };
 
   return (
     <header
@@ -39,10 +47,10 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-6 flex items-center justify-between">
         <Link 
-          to="/" 
+          to="/dashboard" 
           className="text-xl md:text-2xl font-display font-bold tracking-tight text-foreground"
         >
-          <span className="text-gradient">portfolio.</span>
+          <span className="text-gradient">CyberGuard</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -60,6 +68,13 @@ const Navbar = () => {
               {link.name}
             </Link>
           ))}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+          >
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -89,6 +104,13 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-lg font-medium text-foreground/80 hover:text-foreground transition-colors py-2"
+            >
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
           </nav>
         </div>
       )}
