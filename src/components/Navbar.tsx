@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -31,9 +32,9 @@ const Navbar = () => {
     { name: 'Contact', path: '/contact' },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    toast.success('Logged out successfully');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success('Berhasil logout');
     navigate('/auth');
   };
 

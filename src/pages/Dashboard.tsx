@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, Database, Globe, Code, Lock, Server, AlertTriangle, FileCode, Network } from 'lucide-react';
+import { Shield, Database, Globe, Code, AlertTriangle, Network } from 'lucide-react';
 import AnimatedText from '@/components/AnimatedText';
 import ScrollReveal from '@/components/ScrollReveal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Course {
   id: string;
@@ -16,19 +16,17 @@ interface Course {
 }
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<{ email: string } | null>(null);
-  
+  const [displayName, setDisplayName] = useState<string>('');
+
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      navigate('/auth');
-      return;
-    }
-    
-    setUser(JSON.parse(userData));
-  }, [navigate]);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      setDisplayName(profile?.full_name || user.email || '');
+    })();
+  }, []);
 
   const courses: Course[] = [
     {
