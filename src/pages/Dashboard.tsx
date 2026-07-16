@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, Database, Globe, Code, Lock, Server, AlertTriangle, FileCode, Network } from 'lucide-react';
+import { Shield, Database, Globe, Code, AlertTriangle, Network } from 'lucide-react';
 import AnimatedText from '@/components/AnimatedText';
 import ScrollReveal from '@/components/ScrollReveal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Course {
   id: string;
@@ -16,19 +16,17 @@ interface Course {
 }
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState<{ email: string } | null>(null);
-  
+  const [displayName, setDisplayName] = useState<string>('');
+
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (!userData) {
-      navigate('/auth');
-      return;
-    }
-    
-    setUser(JSON.parse(userData));
-  }, [navigate]);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      setDisplayName(profile?.full_name || user.email || '');
+    })();
+  }, []);
 
   const courses: Course[] = [
     {
@@ -94,8 +92,6 @@ const Dashboard = () => {
     { label: 'Instructors', value: '24' }
   ];
 
-  if (!user) return null;
-
   return (
     <div className="pt-24 pb-16 px-6">
       <div className="container mx-auto max-w-6xl">
@@ -103,12 +99,11 @@ const Dashboard = () => {
         <div className="mb-10">
           <ScrollReveal>
             <AnimatedText
-              text="Welcome to CyberGuard Academy"
+              text={displayName ? `Halo, ${displayName.split(' ')[0]} 👋` : 'Selamat Datang di CyberGuard Academy'}
               className="text-3xl md:text-4xl font-display font-bold mb-4"
             />
             <p className="text-muted-foreground max-w-2xl">
-              Your complete learning platform for cybersecurity skills and knowledge.
-              Start learning and advance your cybersecurity career today.
+              Platform belajar cybersecurity lengkap — mulai dari fundamental hingga ethical hacking tingkat lanjut.
             </p>
           </ScrollReveal>
         </div>
