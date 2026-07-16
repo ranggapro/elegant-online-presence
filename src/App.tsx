@@ -10,6 +10,7 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import OAuthConsent from "./pages/OAuthConsent";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -24,14 +25,15 @@ const ScrollToTop = () => {
 
 const AppContent = () => {
   const { pathname } = useLocation();
-  const isAuthPage = pathname === '/auth';
+  const hideChrome = pathname === '/auth' || pathname.startsWith('/.lovable/');
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!isAuthPage && <Navbar />}
+      {!hideChrome && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
@@ -40,7 +42,7 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      {!isAuthPage && <Footer />}
+      {!hideChrome && <Footer />}
     </div>
   );
 };
