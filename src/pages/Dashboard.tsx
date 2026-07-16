@@ -92,8 +92,6 @@ const Dashboard = () => {
     { label: 'Instructors', value: '24' }
   ];
 
-  if (!user) return null;
-
   return (
     <div className="pt-24 pb-16 px-6">
       <div className="container mx-auto max-w-6xl">
@@ -101,12 +99,11 @@ const Dashboard = () => {
         <div className="mb-10">
           <ScrollReveal>
             <AnimatedText
-              text="Welcome to CyberGuard Academy"
+              text={displayName ? `Halo, ${displayName.split(' ')[0]} 👋` : 'Selamat Datang di CyberGuard Academy'}
               className="text-3xl md:text-4xl font-display font-bold mb-4"
             />
             <p className="text-muted-foreground max-w-2xl">
-              Your complete learning platform for cybersecurity skills and knowledge.
-              Start learning and advance your cybersecurity career today.
+              Platform belajar cybersecurity lengkap — mulai dari fundamental hingga ethical hacking tingkat lanjut.
             </p>
           </ScrollReveal>
         </div>
