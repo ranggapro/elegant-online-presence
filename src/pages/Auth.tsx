@@ -1,11 +1,18 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { toast } from 'sonner';
 import { Shield, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 type Mode = 'login' | 'register';
+
+// Only allow same-origin relative paths (e.g. "/dashboard", "/.lovable/oauth/consent?...").
+const sanitizeNext = (value: string | null): string | null => {
+  if (!value) return null;
+  if (!value.startsWith('/') || value.startsWith('//')) return null;
+  return value;
+};
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -19,23 +26,33 @@ const GoogleIcon = () => (
 const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ fullName: '', email: '', password: '' });
 
-  const from = (location.state as any)?.from?.pathname || '/dashboard';
+  // Preserve destination through login/register/OAuth. Priority: ?next=  →  state.from  →  /dashboard.
+  const nextPath = useMemo(() => {
+    return (
+      sanitizeNext(searchParams.get('next')) ||
+      sanitizeNext((location.state as any)?.from?.pathname) ||
+      '/dashboard'
+    );
+  }, [searchParams, location.state]);
 
-  // If already signed in, bounce to dashboard
+  const absoluteNext = `${window.location.origin}${nextPath}`;
+
+  // If already signed in, honor the preserved destination.
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate(from, { replace: true });
+      if (data.session) window.location.href = absoluteNext;
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate(from, { replace: true });
+      if (session) window.location.href = absoluteNext;
     });
     return () => sub.subscription.unsubscribe();
-  }, [navigate, from]);
+  }, [absoluteNext]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +63,7 @@ const Auth = () => {
           email: form.email,
           password: form.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: absoluteNext,
             data: { full_name: form.fullName },
           },
         });
@@ -60,7 +77,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success('Login berhasil!');
-        navigate(from, { replace: true });
+        window.location.href = absoluteNext;
       }
     } catch (err: any) {
       toast.error(err?.message || 'Terjadi kesalahan');
@@ -72,7 +89,7 @@ const Auth = () => {
   const handleGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
+      redirect_uri: absoluteNext,
     });
     if (result.error) {
       toast.error('Login Google gagal');
@@ -80,8 +97,9 @@ const Auth = () => {
       return;
     }
     if (result.redirected) return;
-    navigate(from, { replace: true });
+    window.location.href = absoluteNext;
   };
+
 
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-background">
