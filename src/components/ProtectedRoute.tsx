@@ -1,32 +1,38 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 
-interface ProtectedRouteProps {
+interface Props {
   children: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<Props> = ({ children }) => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    // Check if user is logged in
-    const user = localStorage.getItem('user');
-    setIsAuthenticated(!!user);
+    // Set listener FIRST to avoid race
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      setLoading(false);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
-  
-  if (isAuthenticated === null) {
-    // Still checking authentication status
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
-  
-  if (!isAuthenticated) {
-    // Redirect to login page if not authenticated
-    return <Navigate to="/auth" state={{ from: location }} replace />;
-  }
-  
-  // User is authenticated, render the protected route
+  if (!session) return <Navigate to="/auth" state={{ from: location }} replace />;
   return <>{children}</>;
 };
 
